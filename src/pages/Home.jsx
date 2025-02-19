@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import AppLayout from '../components/layout/AppLayout';
 import Container from '../components/layout/Container';
 import SwipeToSlide from '../components/layout/SwipeToSlide';
-import axiosInstance from '@/api/axiosInstance';
-import socket from '@/socket';
-import ChatWidget from '@/components/ChatWidget/ChatWidget';
+import axiosInstance from '../api/axiosInstance'; // Adjusted the import path
+import socket from '../socket'; // Adjusted the import path
+import ChatWidget from '../components/ChatWidget/ChatWidget'; // Adjusted the import path
 import Carousel from '../components/layout/Carousel';
 import RestaurantCard from '../components/shared/RestaurantCard';
-import { cuisines } from '@/components/constants/cuisines';
+import { cuisines } from '../components/constants/cuisines'; // Adjusted the import path
 import { useNavigation } from '@react-navigation/native';
 
 const Home = () => {
@@ -63,7 +63,7 @@ const Home = () => {
       ) : (
         <ScrollView>
           <Container pl={false}>
-            <View style={{ flex: 1, flexDirection: 'column', gap: 16, height: '80vh' }}>
+            <View style={{ flex: 1, flexDirection: 'column', height: Dimensions.get('window').height * 0.8 }}>
               <Carousel />
               <View style={{ borderBottomWidth: 2, borderBottomColor: '#E5E7EB' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -73,7 +73,7 @@ const Home = () => {
                 </View>
                 <SwipeToSlide cuisines={cuisines} size={16} />
               </View>
-              <View style={{ marginTop: 32, paddingBottom: 64, flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+              <View style={{ marginTop: 32, paddingBottom: 64, flexDirection: 'row', flexWrap: 'wrap' }}>
                 {restaurants?.length > 0 ? (
                   restaurantCards
                 ) : (
