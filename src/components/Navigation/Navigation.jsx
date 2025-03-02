@@ -4,17 +4,20 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
 //import Loader from '@/components/layout/Loader';
-import Home from '@/pages/Home';
-import Login from '@/pages/Login';
-import Signup from '@/pages/Signup';
-import Search from '@/pages/Search';
-import Restaurant from '@/pages/Restaurant';
-import Cart from '@/pages/Cart';
-import ComingSoon from '@/pages/ComingSoon';
-import Orders from '@/pages/Orders';
-import PageNotFound from '@/pages/PageNotFound';
+import { View, Text } from 'react-native';
 //import ProtectedRoute from '../auth/ProtectedRoute';
 //import AuthProtected from '../auth/AuthProtected';
+
+// Placeholder components
+const Home = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Home Screen</Text></View>;
+const Login = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Login Screen</Text></View>;
+const Signup = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Signup Screen</Text></View>;
+const Search = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Search Screen</Text></View>;
+const Restaurant = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Restaurant Screen</Text></View>;
+const Cart = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Cart Screen</Text></View>;
+const ComingSoon = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Coming Soon</Text></View>;
+const Orders = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Orders Screen</Text></View>;
+const PageNotFound = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Page Not Found</Text></View>;
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

@@ -1,4 +1,5 @@
 import React from "react";
+import { View, StyleSheet, SafeAreaView } from "react-native";
 import Navbar from "./Navbar";
 import BottomNav from "./BottomNav";
 
@@ -16,12 +17,24 @@ import BottomNav from "./BottomNav";
 
 const AppLayout = ({ children }) => {
     return (
-        <div className="mb-16 md:mb-4">
+        <SafeAreaView style={styles.container}>
             <Navbar />
-            {children}
+            <View style={styles.content}>
+                {children}
+            </View>
             <BottomNav />
-        </div>
+        </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f9fafb', // gray-50 equivalent
+    },
+    content: {
+        flex: 1,
+    }
+});
 
 export default AppLayout;

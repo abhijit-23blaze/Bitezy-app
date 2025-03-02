@@ -1,308 +1,419 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
-    FiSearch,
-    FiHome,
-    FiPercent,
-    FiHelpCircle,
-    FiUser,
-    FiShoppingCart,
-    FiMapPin,
-    FiMenu,
-    FiLogOut,
-    FiBell,
-} from "react-icons/fi";
-import { FaHistory } from "react-icons/fa";
-import { IoCloseSharp } from "react-icons/io5";
-import Avatar from "./Avatar";
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  Animated,
+  Dimensions,
+  Linking
+} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { selectItems } from "../../redux/cart";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import { clearNewNotification } from "@/redux/notification";
 import axiosInstance from "@/api/axiosInstance";
-import toast from "react-hot-toast";
 import { clearCustomerData } from "@/redux/user";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import Toast from "react-native-toast-message";
+
+// Import icons from a React Native compatible icon library
+// For example, you can use react-native-vector-icons
+import Icon from 'react-native-vector-icons/Feather';
+import HistoryIcon from 'react-native-vector-icons/FontAwesome';
+import CloseIcon from 'react-native-vector-icons/Ionicons';
+
+// Custom Avatar component
+const Avatar = ({ src }) => {
+  return (
+    <Image
+      source={{ uri: src }}
+      style={styles.avatar}
+    />
+  );
+};
 
 const Navbar = () => {
-    const [isDrawerOpen, setDrawerOpen] = useState(false);
-    const [isNotificationsOpen, setNotificationsOpen] = useState(false);
-    const user = useSelector((state) => state.customer.customerInformation);
-    const notifications = useSelector((state) => state.notification.notifications);
-    const isNewNotification = useSelector((state) => state.notification.newNotification);
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const toggleDrawer = () => {
-        setDrawerOpen(!isDrawerOpen);
-    };
-
-    const handleNotificationClick = () => {
-        if (!isNotificationsOpen) {
-            dispatch(clearNewNotification());
-        }
-        setNotificationsOpen(prev => !prev);
-        console.log(isNotificationsOpen)
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const [isNotificationsOpen, setNotificationsOpen] = useState(false);
+  const user = useSelector((state) => state.customer.customerInformation);
+  const notifications = useSelector((state) => state.notification.notifications);
+  const isNewNotification = useSelector((state) => state.notification.newNotification);
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+  const route = useRoute();
+  
+  // Animation for drawer
+  const [slideAnim] = useState(new Animated.Value(Dimensions.get('window').width));
+  
+  useEffect(() => {
+    if (isDrawerOpen) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: Dimensions.get('window').width,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
     }
-    const items = useSelector(selectItems);
-    const itemsInCart = useMemo(() => {
-        return items?.length;
-    }, [items]);
+  }, [isDrawerOpen, slideAnim]);
 
-    const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const toggleDrawer = () => {
+    setDrawerOpen(!isDrawerOpen);
+  };
 
-    const toggleDropdown = () => {
-        setDropdownOpen(!isDropdownOpen);
-    };
+  const handleNotificationClick = () => {
+    if (!isNotificationsOpen) {
+      dispatch(clearNewNotification());
+    }
+    setNotificationsOpen(prev => !prev);
+  };
 
-    const handleSignOut = async () => {
-        try {
-            const { data } = await axiosInstance.get('/auth/logout');
-            if (data.success) {
-                toast.success(data.message);
-                dispatch(clearCustomerData())
-                navigate("/login")
-            }
-        }
-        catch (err) {
-            console.error(err);
-            toast.error(err.response.data.message)
-        }
-    };
+  const items = useSelector(selectItems);
+  const itemsInCart = useMemo(() => {
+    return items?.length;
+  }, [items]);
 
-    const handleHistory = () => {
-        // Handle history functionality here
-        console.log("History clicked");
-    };
+  const handleSignOut = async () => {
+    try {
+      const { data } = await axiosInstance.get('/auth/logout');
+      if (data.success) {
+        Toast.show({
+          type: 'success',
+          text1: data.message,
+        });
+        dispatch(clearCustomerData());
+        navigation.navigate("Login");
+      }
+    }
+    catch (err) {
+      console.error(err);
+      Toast.show({
+        type: 'error',
+        text1: err.response?.data?.message || 'Error signing out',
+      });
+    }
+  };
 
-    const pathname = location.pathname;
-    const isActive = (path) => pathname === path;
-    return (
-        <nav className="bg-white shadow-md text-lg fixed w-full z-20">
-            <div className="w-full xl:w-[80%] mx-auto flex items-center justify-between py-4 md:py-0 px-4 md:px-2 lg:px-6">
-                {/* Mobile Layout */}
-                <div className="flex items-center justify-between w-full md:hidden">
-                    {/* Logo and Location Selector */}
-                    <div className="flex items-center space-x-2">
-                        <Link to="/">
-                            <img
-                                src="/bitezy_logo.png"
-                                alt="logo"
-                                className="h-12 w-12"
-                            />
-                        </Link>
-                        <div className="flex items-center space-x-1 font-semibold">
-                            <FiMapPin className="text-orange-500 font-semibold" />
-                            <select className="text-gray-700 focus:outline-none border-b border-gray-300 focus:border-orange-500 font-semibold text-sm">
-                                <option>Sricity</option>
-                                <option>Tada</option>
-                            </select>
-                        </div>
-                    </div>
+  const handleHelp = () => {
+    Linking.openURL("https://wa.me/+918733936309?text=Hey team. I need help with....");
+  };
 
-                    {/* Hamburger Menu */}
-                    <div className="md:hidden flex items-center">
-                        <button
-                            className="text-gray-700 hover:text-orange-500 focus:outline-none"
-                            onClick={toggleDrawer}
-                        >
-                            <Avatar src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXJr-fGkiy1DE5A0JNOkcmCNGcXuQXdzENZA&s"} />
-                        </button>
-                    </div>
-                </div>
+  const isActive = (routeName) => route.name === routeName;
 
-                <div
-                    className={`fixed inset-y-0 right-0 w-64 bg-white shadow-lg transform ${isDrawerOpen ? "translate-x-0" : "translate-x-full"
-                        } transition-transform duration-300 ease-in-out`}
-                >
-                    <div className="p-5 flex items-center justify-between border-b">
-                        <span className="text-lg font-semibold">Menu</span>
-                        <button onClick={toggleDrawer}>
-                            <IoCloseSharp className="w-6 h-6 text-gray-700 hover:text-orange-500" />
-                        </button>
-                    </div>
-                    <div className="px-6 py-4 space-y-4">
-                        <Link to="/" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/") ? "text-orange-500" : ""}`}>
-                            <FiHome className="mr-2" /> Home
-                        </Link>
-                        <Link to="/search" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/search") ? "text-orange-500" : ""}`}>
-                            <FiSearch className="mr-2" /> Search
-                        </Link>
-                        {
-                            user && (
-                                <Link to="/orders" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/orders") ? "text-orange-500" : ""}`}>
-                                    <FiPercent className="mr-2" /> Orders
-                                </Link>
-                            )
-                        }
-                        {/* <Link to="/help" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/help") ? "text-orange-500" : ""}`}>
-                            <FiHelpCircle className="mr-2" /> Help
-                        </Link> */}
-                        <div onClick={() => { window.open("https://wa.me/" + "+918733936309" + "?text=" + "Hey team. I need help with...."); }} className={`flex cursor-pointer items-center text-gray-700 hover:text-orange-500 ${isActive("/help") ? "text-orange-500" : ""}`}>
-                            <FiHelpCircle className="mr-2" /> Help
-                        </div>
-                        {
-                            !user && (
-                                <Link to="/login" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/login") ? "text-orange-500" : ""}`}>
-                                    <FiUser className="mr-2" /> Sign In
-                                </Link>
-                            )
-                        }
-                        <Link to="/cart" className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/cart") ? "text-orange-500" : ""}`}>
-                            <FiShoppingCart className="mr-2" /> Cart
-                        </Link>
-                        {
-                            user && (
-                                <div onClick={handleSignOut} className={`flex items-center text-gray-700 hover:text-orange-500 ${isActive("/logout") ? "text-orange-500" : ""}`}>
-                                    <FiUser className="mr-2" /> Sign Out
-                                </div>
-                            )
-                        }
-                    </div>
-                </div>
+  return (
+    <View style={styles.container}>
+      {/* Mobile Layout */}
+      <View style={styles.mobileContainer}>
+        {/* Logo and Location */}
+        <View style={styles.logoContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+            <Image
+              source={require("@/assets/bitezy_logo.png")}
+              style={styles.logo}
+            />
+          </TouchableOpacity>
+          <View style={styles.locationContainer}>
+            <Icon name="map-pin" size={16} color="#f97316" />
+            <Text style={styles.locationText}>Sricity</Text>
+          </View>
+        </View>
 
-                {/* Desktop Layout */}
-                <div className="hidden md:flex items-center space-x-3">
-                    <div className="flex items-center space-x-3">
-                        <div className="text-2xl font-bold text-orange-500">
-                            <Link to="/">
-                                <img
-                                    src="/bitezy_logo.png"
-                                    alt="logo"
-                                    className="h-20 w-20"
-                                />
-                            </Link>
-                        </div>
+        {/* Menu Button */}
+        <TouchableOpacity onPress={toggleDrawer}>
+          <Avatar src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXJr-fGkiy1DE5A0JNOkcmCNGcXuQXdzENZA&s"} />
+        </TouchableOpacity>
+      </View>
 
-                        <div className="flex items-center space-x-2 font-semibold">
-                            <FiMapPin className="text-orange-500 font-semibold" />
-                            <select className="text-gray-700 focus:outline-none border-b border-gray-300 focus:border-orange-500 font-semibold">
-                                <option>Sricity</option>
-                                <option>Tada</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+      {/* Drawer Menu */}
+      <Animated.View style={[
+        styles.drawer,
+        { transform: [{ translateX: slideAnim }] }
+      ]}>
+        <View style={styles.drawerHeader}>
+          <Text style={styles.drawerTitle}>Menu</Text>
+          <TouchableOpacity onPress={toggleDrawer}>
+            <CloseIcon name="close-sharp" size={24} color="#374151" />
+          </TouchableOpacity>
+        </View>
+        
+        <ScrollView style={styles.drawerContent}>
+          <TouchableOpacity 
+            style={[styles.drawerItem, isActive("Home") && styles.activeItem]} 
+            onPress={() => {
+              navigation.navigate("Home");
+              setDrawerOpen(false);
+            }}
+          >
+            <Icon name="home" size={20} color={isActive("Home") ? "#f97316" : "#374151"} />
+            <Text style={[styles.drawerItemText, isActive("Home") && styles.activeItemText]}>Home</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.drawerItem, isActive("Search") && styles.activeItem]} 
+            onPress={() => {
+              navigation.navigate("Search");
+              setDrawerOpen(false);
+            }}
+          >
+            <Icon name="search" size={20} color={isActive("Search") ? "#f97316" : "#374151"} />
+            <Text style={[styles.drawerItemText, isActive("Search") && styles.activeItemText]}>Search</Text>
+          </TouchableOpacity>
+          
+          {user && (
+            <TouchableOpacity 
+              style={[styles.drawerItem, isActive("Orders") && styles.activeItem]} 
+              onPress={() => {
+                navigation.navigate("Orders");
+                setDrawerOpen(false);
+              }}
+            >
+              <Icon name="percent" size={20} color={isActive("Orders") ? "#f97316" : "#374151"} />
+              <Text style={[styles.drawerItemText, isActive("Orders") && styles.activeItemText]}>Orders</Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.drawerItem} 
+            onPress={() => {
+              handleHelp();
+              setDrawerOpen(false);
+            }}
+          >
+            <Icon name="help-circle" size={20} color="#374151" />
+            <Text style={styles.drawerItemText}>Help</Text>
+          </TouchableOpacity>
+          
+          {!user ? (
+            <TouchableOpacity 
+              style={[styles.drawerItem, isActive("Login") && styles.activeItem]} 
+              onPress={() => {
+                navigation.navigate("Login");
+                setDrawerOpen(false);
+              }}
+            >
+              <Icon name="user" size={20} color={isActive("Login") ? "#f97316" : "#374151"} />
+              <Text style={[styles.drawerItemText, isActive("Login") && styles.activeItemText]}>Sign In</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={styles.drawerItem} 
+              onPress={() => {
+                handleSignOut();
+                setDrawerOpen(false);
+              }}
+            >
+              <Icon name="log-out" size={20} color="#374151" />
+              <Text style={styles.drawerItemText}>Sign Out</Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={[styles.drawerItem, isActive("Cart") && styles.activeItem]} 
+            onPress={() => {
+              navigation.navigate("Cart");
+              setDrawerOpen(false);
+            }}
+          >
+            <View style={styles.cartIconContainer}>
+              <Icon name="shopping-cart" size={20} color={isActive("Cart") ? "#f97316" : "#374151"} />
+              {itemsInCart > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{itemsInCart}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.drawerItemText, isActive("Cart") && styles.activeItemText]}>Cart</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </Animated.View>
 
-                {/* Nav Links (Desktop) */}
-                <div className="hidden md:flex items-center space-x-3 xl:space-x-10">
-                    <Link
-                        to="/search"
-                        className={`flex items-center font-semibold text-gray-700 hover:text-orange-500 ${isActive("/search") ? "text-orange-500" : ""}`}
-                    >
-                        <FiSearch className="mr-1 lg:mr-4 font-semibold" />{" "}
-                        Search
-                    </Link>
-                    {user && <Link to="/orders" className={`flex items-center font-semibold text-gray-700 hover:text-orange-500 ${isActive("/orders") ? "text-orange-500" : ""}`}>
-                        <FiPercent className="mr-1 lg:mr-4 font-semibold" /> Orders
-                    </Link>}
-                    {/* <Link
-                        to="/help"
-                        className={`flex items-center font-semibold text-gray-700 hover:text-orange-500 ${isActive("/help") ? "text-orange-500" : ""}`}
-                    >
-                        <FiHelpCircle className="mr-1 lg:mr-4 font-semibold" />{" "}
-                        Help
-                    </Link> */}
-                    <div onClick={() => { window.open("https://wa.me/" + "+918733936309" + "?text=" + "Hey team. I need help with...."); }} className={`flex cursor-pointer font-bold items-center text-gray-700 hover:text-orange-500 ${isActive("/help") ? "text-orange-500" : ""}`}>
-                        <FiHelpCircle className="mr-2" /> Help
-                    </div>
-                    {!user && (
-                        <Link
-                            to="/login"
-                            className={`flex items-center font-semibold text-gray-700 hover:text-orange-500 ${isActive("/login") ? "text-orange-500" : ""}`}
-                        >
-                            <FiUser className="mr-1 lg:mr-4 font-semibold" />{" "}
-                            Sign In
-                        </Link>
-                    )}
-                    <Link
-                        to="/cart"
-                        className={`relative flex items-center font-semibold text-gray-700 hover:text-orange-500 ${isActive("/cart") ? "text-orange-500" : ""}`}
-                    >
-                        <FiShoppingCart className="mr-2 lg:mr-4 font-semibold" />{" "}
-                        Cart
-                        {itemsInCart !== 0 && (
-                            <span className="absolute -top-2 -right-2 text-xs font-semibold bg-green-600 text-white rounded-full px-1">
-                                {itemsInCart}
-                            </span>
-                        )}
-                    </Link>
-
-                    {/* Notifications Dropdown */}
-                    {
-                        user && (
-                            <>
-                                <div
-                                    className="relative flex items-center font-semibold text-gray-700 hover:text-orange-500 hover:cursor-pointer"
-                                    onClick={handleNotificationClick}
-                                >
-                                    <FiBell className="mr-2 lg:mr-4 font-semibold" />
-                                    Notifications
-                                    {/* Blinking Orange Dot for New Notification */}
-                                    {isNewNotification && (
-                                        <span className="absolute -top-2 -right-2 text-xs font-semibold bg-red-600 text-white rounded-full px-1">
-                                            {1}
-                                        </span>
-                                    )}
-                                    {isNotificationsOpen && (
-                                        <div className="absolute top-full right-0 mt-2 w-[30rem] bg-white border border-gray-300 shadow-xl rounded-lg p-4 max-h-60 overflow-y-auto z-50">
-                                            {notifications?.length === 0 ? (
-                                                <p className="text-gray-500 text-sm text-center">No new notifications</p>
-                                            ) : (
-                                                notifications?.map((notification, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex items-start space-x-3 py-2 px-3 border-b border-gray-200 hover:bg-gray-100 transition-colors duration-150 rounded-lg"
-                                                    >
-                                                        <div className="flex-shrink-0 bg-blue-100 text-blue-500 rounded-full p-2">
-                                                            {/* You can replace this with an icon */}
-                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m2 0h-1V9m0 0h.01M12 9v4m0-4h-.01M9.5 4.5A4.5 4.5 0 0114 9v5.586a1 1 0 01-.293.707l-1.5 1.5a1 1 0 01-.707.293h-3a1 1 0 01-.707-.293l-1.5-1.5A1 1 0 017 14.586V9a4.5 4.5 0 014.5-4.5z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div className="flex-1 overflow-hidden">
-                                                            <p className="text-gray-800 text-sm font-semibold break-words whitespace-normal">
-                                                                {notification.message}
-                                                            </p>
-                                                            <p className="text-gray-500 text-xs">Just now</p>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="hidden relative md:flex items-center">
-                                    <button
-                                        className="text-gray-700 hover:text-orange-500 focus:outline-none"
-                                        onClick={toggleDropdown}
-                                    >
-                                        <Avatar src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXJr-fGkiy1DE5A0JNOkcmCNGcXuQXdzENZA&s"} />
-                                    </button>
-
-                                    {isDropdownOpen && (
-                                        <div className="absolute border-2 border-slate-100 top-8 right-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-10">
-                                            <button
-                                                onClick={handleHistory}
-                                                className="w-full flex items-center gap-2 px-2 py-2 font-semibold text-gray-700 hover:bg-orange-200"
-                                            >
-                                                <FaHistory size={20} /> History
-                                            </button>
-                                            <button
-                                                onClick={handleSignOut}
-                                                className="flex items-center gap-2 w-full px-2 py-2 font-semibold text-gray-700 hover:bg-orange-200"
-                                            >
-                                                <FiLogOut size={20} /> Sign Out
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )
-                    }
-                </div>
-            </div>
-        </nav>
-    );
+      {/* Notifications Modal */}
+      <Modal
+        visible={isNotificationsOpen}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setNotificationsOpen(false)}
+      >
+        <View style={styles.notificationModal}>
+          <View style={styles.notificationContent}>
+            <View style={styles.notificationHeader}>
+              <Text style={styles.notificationTitle}>Notifications</Text>
+              <TouchableOpacity onPress={() => setNotificationsOpen(false)}>
+                <CloseIcon name="close-sharp" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.notificationList}>
+              {notifications?.length === 0 ? (
+                <Text style={styles.emptyNotification}>No new notifications</Text>
+              ) : (
+                notifications?.map((notification, index) => (
+                  <View key={index} style={styles.notificationItem}>
+                    <Text style={styles.notificationText}>{notification.message}</Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 20,
+  },
+  mobileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    height: 48,
+    width: 48,
+    resizeMode: 'contain',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  locationText: {
+    fontWeight: '600',
+    color: '#374151',
+    marginLeft: 4,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 250,
+    height: '100%',
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 30,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  drawerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  drawerContent: {
+    padding: 16,
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  drawerItemText: {
+    marginLeft: 8,
+    color: '#374151',
+    fontSize: 16,
+  },
+  activeItem: {
+    // Active item styling
+  },
+  activeItemText: {
+    color: '#f97316',
+  },
+  cartIconContainer: {
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#16a34a',
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  notificationModal: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  notificationContent: {
+    width: '80%',
+    maxHeight: '60%',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  notificationTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  notificationList: {
+    padding: 16,
+  },
+  notificationItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  notificationText: {
+    fontSize: 14,
+  },
+  emptyNotification: {
+    textAlign: 'center',
+    color: '#6b7280',
+    padding: 16,
+  },
+});
 
 export default Navbar;
