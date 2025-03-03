@@ -1,24 +1,25 @@
 // cartSlice.js
-import axiosInstance from "@/api/axiosInstance";
 import { createSlice } from "@reduxjs/toolkit";
-import { createAsyncThunk } from "@reduxjs/toolkit";
+// Import axiosInstance but don't use it for now
+// import axiosInstance from "@/api/axiosInstance";
 
 const initialState = {
     items: [],
     restaurant: null,
 };
 
-export const saveCartToBackend = createAsyncThunk(
-    "cart/saveCartToBackend",
-    async (cartData, { rejectWithValue }) => {
-        try {
-            const response = await axiosInstance.post("/api/cart/save", cartData);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.response.data);
+// Mock async thunk for development
+const saveCartToBackend = (cartData) => {
+    console.log('Mock saveCartToBackend called with:', cartData);
+    return {
+        type: 'cart/saveCartToBackend/fulfilled',
+        payload: {
+            success: true,
+            message: 'Cart saved successfully (mock)',
+            data: cartData
         }
-    }
-);
+    };
+};
 
 const cartSlice = createSlice({
     name: "cart",
@@ -84,4 +85,5 @@ export const {
     clearCart,
 } = cartSlice.actions;
 
+export { saveCartToBackend };
 export default cartSlice.reducer;
