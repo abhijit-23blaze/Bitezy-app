@@ -1,26 +1,109 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  ActivityIndicator,
+  RefreshControl 
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import AppLayout from '../components/layout/AppLayout';
+import axiosInstance from '@/api/axiosInstance';
+import { useSelector } from 'react-redux';
 
 const Home = () => {
+  const [restaurants, setRestaurants] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
+  const user = useSelector(state => state.customer.customerInformation);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [restaurantsRes, categoriesRes, offersRes] = await Promise.all([
+        axiosInstance.get('/restaurants'),
+        axiosInstance.get('/categories'),
+        axiosInstance.get('/offers')
+      ]);
+
+      setRestaurants(restaurantsRes.data.restaurants || []);
+      setCategories(categoriesRes.data.categories || []);
+      setOffers(offersRes.data.offers || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleRestaurantPress = (restaurantId) => {
+    navigation.navigate('Restaurant', { id: restaurantId });
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#f97316" />
+        </View>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
-      <ScrollView style={styles.container}>
+      <ScrollView 
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Welcome to Bitezy</Text>
+          <Text style={styles.headerTitle}>
+            {user ? `Welcome back, ${user.name}!` : 'Welcome to Bitezy'}
+          </Text>
           <Text style={styles.headerSubtitle}>Delicious food delivered to your doorstep</Text>
         </View>
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Popular Restaurants</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-            {[1, 2, 3, 4].map((item) => (
-              <TouchableOpacity key={item} style={styles.restaurantCard}>
+            {restaurants.map((restaurant) => (
+              <TouchableOpacity 
+                key={restaurant._id} 
+                style={styles.restaurantCard}
+                onPress={() => handleRestaurantPress(restaurant._id)}
+              >
                 <View style={styles.restaurantImageContainer}>
-                  <View style={styles.restaurantImage} />
+                  {restaurant.image ? (
+                    <Image 
+                      source={{ uri: restaurant.image }} 
+                      style={styles.restaurantImage}
+                    />
+                  ) : (
+                    <View style={styles.restaurantImagePlaceholder} />
+                  )}
                 </View>
-                <Text style={styles.restaurantName}>Restaurant {item}</Text>
-                <Text style={styles.restaurantInfo}>Fast Food • 20-30 min</Text>
+                <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                <Text style={styles.restaurantInfo}>
+                  {restaurant.cuisineTypes?.join(', ')} • {restaurant.deliveryTime}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -29,10 +112,21 @@ const Home = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>
           <View style={styles.categoriesContainer}>
-            {['Pizza', 'Burger', 'Sushi', 'Salad'].map((category) => (
-              <TouchableOpacity key={category} style={styles.categoryItem}>
-                <View style={styles.categoryIcon} />
-                <Text style={styles.categoryName}>{category}</Text>
+            {categories.map((category) => (
+              <TouchableOpacity 
+                key={category._id} 
+                style={styles.categoryItem}
+                onPress={() => navigation.navigate('Search', { category: category.name })}
+              >
+                {category.icon ? (
+                  <Image 
+                    source={{ uri: category.icon }} 
+                    style={styles.categoryIcon}
+                  />
+                ) : (
+                  <View style={styles.categoryIconPlaceholder} />
+                )}
+                <Text style={styles.categoryName}>{category.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -41,12 +135,23 @@ const Home = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Featured Offers</Text>
           <View style={styles.offersContainer}>
-            {[1, 2].map((item) => (
-              <TouchableOpacity key={item} style={styles.offerCard}>
-                <View style={styles.offerImage} />
+            {offers.map((offer) => (
+              <TouchableOpacity 
+                key={offer._id} 
+                style={styles.offerCard}
+                onPress={() => navigation.navigate('Restaurant', { id: offer.restaurantId })}
+              >
+                {offer.image ? (
+                  <Image 
+                    source={{ uri: offer.image }} 
+                    style={styles.offerImage}
+                  />
+                ) : (
+                  <View style={styles.offerImagePlaceholder} />
+                )}
                 <View style={styles.offerContent}>
-                  <Text style={styles.offerTitle}>Special Offer {item}</Text>
-                  <Text style={styles.offerDescription}>Get 20% off on your first order</Text>
+                  <Text style={styles.offerTitle}>{offer.title}</Text>
+                  <Text style={styles.offerDescription}>{offer.description}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -61,6 +166,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     padding: 20,
@@ -111,6 +221,11 @@ const styles = StyleSheet.create({
   restaurantImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
+  },
+  restaurantImagePlaceholder: {
+    width: '100%',
+    height: '100%',
     backgroundColor: '#d1d5db',
   },
   restaurantName: {
@@ -148,6 +263,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    marginRight: 12,
+  },
+  categoryIconPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#f97316',
     marginRight: 12,
   },
@@ -170,6 +291,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   offerImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
+  },
+  offerImagePlaceholder: {
     width: '100%',
     height: 120,
     backgroundColor: '#d1d5db',

@@ -1,277 +1,172 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Provider } from 'react-redux';
+import { store } from './redux/store';
+import Toast from 'react-native-toast-message';
+import { SafeAreaView, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 
-// Super simple App component with no dependencies
+// Import screens
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Restaurant from './pages/Restaurant';
+import Cart from './pages/Cart';
+import Search from './pages/Search';
+import Orders from './pages/Orders';
+import Signup from './pages/Signup';
+
+// Create stack navigator
+const Stack = createNativeStackNavigator();
+
+// Error boundary component
+const ErrorFallback = ({ error, resetError }) => (
+  <SafeAreaView style={styles.errorContainer}>
+    <Text style={styles.errorTitle}>Something went wrong</Text>
+    <Text style={styles.errorMessage}>{error.toString()}</Text>
+    <View style={styles.button} onPress={resetError}>
+      <Text style={styles.buttonText}>Try Again</Text>
+    </View>
+  </SafeAreaView>
+);
+
 const App = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Render the active screen based on the selected tab
-  const renderScreen = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>Welcome to Bitezy!</Text>
-            <Text style={styles.subtitle}>Your favorite food delivery app</Text>
-            <View style={styles.featuredSection}>
-              <Text style={styles.sectionTitle}>Featured Restaurants</Text>
-              <View style={styles.restaurantCard}>
-                <View style={styles.restaurantImage} />
-                <Text style={styles.restaurantName}>Tasty Bites</Text>
-                <Text style={styles.restaurantInfo}>Italian • 4.8 ★ • 25-35 min</Text>
-              </View>
-            </View>
-          </View>
-        );
-      case 'search':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>Search</Text>
-            <View style={styles.searchBar}>
-              <Text style={styles.searchText}>Search for restaurants or dishes...</Text>
-            </View>
-            <Text style={styles.sectionTitle}>Popular Categories</Text>
-            <View style={styles.categoriesRow}>
-              <View style={styles.categoryItem}>
-                <Text style={styles.categoryText}>Pizza</Text>
-              </View>
-              <View style={styles.categoryItem}>
-                <Text style={styles.categoryText}>Burgers</Text>
-              </View>
-              <View style={styles.categoryItem}>
-                <Text style={styles.categoryText}>Sushi</Text>
-              </View>
-            </View>
-          </View>
-        );
-      case 'cart':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>Your Cart</Text>
-            <Text style={styles.emptyText}>Your cart is empty</Text>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Browse Restaurants</Text>
-            </TouchableOpacity>
-          </View>
-        );
-      case 'profile':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>Profile</Text>
-            <View style={styles.profileSection}>
-              <View style={styles.avatar} />
-              <Text style={styles.profileName}>Guest User</Text>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      default:
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>Welcome to Bitezy!</Text>
-          </View>
-        );
-    }
-  };
+  useEffect(() => {
+    // Simulate initialization
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text style={styles.loadingText}>Loading Bitezy...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return <ErrorFallback error={error} resetError={() => setError(null)} />;
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Bitezy</Text>
-      </View>
-      
-      {renderScreen()}
-      
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.tabItem, activeTab === 'home' && styles.activeTab]} 
-          onPress={() => setActiveTab('home')}
+    <Provider store={store}>
+      <NavigationContainer
+        fallback={<ActivityIndicator size="large" color="#f97316" />}
+        onError={(error) => {
+          console.error('Navigation error:', error);
+          setError(error);
+        }}
+      >
+        <Stack.Navigator
+          initialRouteName="Home"
+          screenOptions={{
+            headerShown: false,
+          }}
         >
-          <Text style={[styles.tabText, activeTab === 'home' && styles.activeTabText]}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabItem, activeTab === 'search' && styles.activeTab]} 
-          onPress={() => setActiveTab('search')}
-        >
-          <Text style={[styles.tabText, activeTab === 'search' && styles.activeTabText]}>Search</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabItem, activeTab === 'cart' && styles.activeTab]} 
-          onPress={() => setActiveTab('cart')}
-        >
-          <Text style={[styles.tabText, activeTab === 'cart' && styles.activeTabText]}>Cart</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabItem, activeTab === 'profile' && styles.activeTab]} 
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text style={[styles.tabText, activeTab === 'profile' && styles.activeTabText]}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen 
+            name="Login" 
+            component={Login}
+            options={{
+              headerShown: true,
+              title: 'Sign In'
+            }}
+          />
+          <Stack.Screen 
+            name="Signup" 
+            component={Signup}
+            options={{
+              headerShown: true,
+              title: 'Create Account'
+            }}
+          />
+          <Stack.Screen 
+            name="Restaurant" 
+            component={Restaurant}
+            options={{
+              headerShown: true,
+              title: ''
+            }}
+          />
+          <Stack.Screen 
+            name="Cart" 
+            component={Cart}
+            options={{
+              headerShown: true,
+              title: 'Your Cart'
+            }}
+          />
+          <Stack.Screen 
+            name="Search" 
+            component={Search}
+            options={{
+              headerShown: true,
+              title: 'Search'
+            }}
+          />
+          <Stack.Screen 
+            name="Orders" 
+            component={Orders}
+            options={{
+              headerShown: true,
+              title: 'Your Orders'
+            }}
+          />
+        </Stack.Navigator>
+        <Toast />
+      </NavigationContainer>
+    </Provider>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    height: 60,
-    backgroundColor: '#f97316',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: '#fff',
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
-  content: {
+  errorContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 30,
-  },
-  footer: {
-    height: 60,
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  tabItem: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  activeTab: {
-    borderTopWidth: 3,
-    borderTopColor: '#f97316',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#f97316',
-    fontWeight: 'bold',
-  },
-  featuredSection: {
-    marginTop: 20,
-  },
-  sectionTitle: {
+  errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  restaurantCard: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  restaurantImage: {
-    height: 150,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 8,
+    color: '#ff3b30',
     marginBottom: 10,
   },
-  restaurantName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  restaurantInfo: {
-    color: '#666',
-  },
-  searchBar: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  searchText: {
-    color: '#999',
-  },
-  categoriesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  categoryItem: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 15,
-    width: '30%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  categoryText: {
-    fontWeight: 'bold',
-  },
-  emptyText: {
+  errorMessage: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginVertical: 30,
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#f97316',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 20,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  profileSection: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#e0e0e0',
-    marginBottom: 20,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
   },
 });
 

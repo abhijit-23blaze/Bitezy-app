@@ -1,37 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { setCustomerInformation } from '../redux/store';
+import authService from '../services/authService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
+    setError('');
     
-    // Simulate login for testing
-    setTimeout(() => {
-      // Mock user data
-      const userData = {
-        _id: '123',
-        name: 'Test User',
-        email: email,
-      };
+    try {
+      // Use authService for login
+      const result = await authService.login(email, password);
       
-      dispatch(setCustomerInformation(userData));
+      if (result.success) {
+        // Store user data in Redux
+        dispatch(setCustomerInformation(result.user));
+        setLoading(false);
+        navigation.navigate('Home');
+      } else {
+        setError(result.message || 'Login failed');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An unexpected error occurred');
       setLoading(false);
-      navigation.navigate('Home');
-    }, 1500);
+    }
   };
 
   return (
@@ -48,6 +56,12 @@ const Login = () => {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Login</Text>
           <Text style={styles.subtitle}>Welcome back! Please sign in to continue</Text>
+
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
@@ -72,7 +86,10 @@ const Login = () => {
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity 
+            style={styles.forgotPassword}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -81,9 +98,11 @@ const Login = () => {
             onPress={handleLogin}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Logging in...' : 'Login'}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.signupContainer}>
@@ -138,6 +157,16 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 32,
   },
+  errorContainer: {
+    backgroundColor: '#fee2e2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+  },
   inputContainer: {
     marginBottom: 20,
   },
@@ -170,6 +199,8 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+    height: 56,
+    justifyContent: 'center',
   },
   buttonDisabled: {
     backgroundColor: '#fdba74',
