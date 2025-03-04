@@ -11,6 +11,7 @@ module.exports = function(api) {
           },
         },
       ],
+      require('./babel-url-fix'),
     ],
   };
 };

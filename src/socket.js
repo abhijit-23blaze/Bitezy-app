@@ -1,120 +1,25 @@
 // src/socket.js
-// Simplified mock socket implementation for development
+// Safe socket implementation
 
-import { io } from 'socket.io-client';
+import { createSafeSocketConnection } from './emergency-fix';
 import { server } from '@/components/constants/config';
 
-// Create a mock socket implementation as fallback
-const createMockSocket = () => {
-  console.log('Using mock socket implementation');
-  
-  return {
-    id: 'mock-socket-id',
-    connected: false,
-    
-    // Event handlers
-    _eventHandlers: {},
-    
-    // Basic methods
-    on(event, callback) {
-      if (!this._eventHandlers[event]) {
-        this._eventHandlers[event] = [];
-      }
-      this._eventHandlers[event].push(callback);
-      return this;
-    },
-    
-    off(event, callback) {
-      if (this._eventHandlers[event]) {
-        if (callback) {
-          this._eventHandlers[event] = this._eventHandlers[event].filter(cb => cb !== callback);
-        } else {
-          delete this._eventHandlers[event];
-        }
-      }
-      return this;
-    },
-    
-    emit(event, ...args) {
-      console.log(`Mock socket: emit "${event}" called`);
-      return this;
-    },
-    
-    // Internal method to trigger events
-    _trigger(event, ...args) {
-      if (this._eventHandlers[event]) {
-        this._eventHandlers[event].forEach(callback => {
-          try {
-            callback(...args);
-          } catch (err) {
-            console.error(`Error in socket ${event} handler:`, err);
-          }
-        });
-      }
-    },
-    
-    // Connect/disconnect simulation
-    connect() {
-      setTimeout(() => {
-        this.connected = true;
-        this._trigger('connect');
-      }, 500);
-      return this;
-    },
-    
-    disconnect() {
-      this.connected = false;
-      this._trigger('disconnect');
-      return this;
-    }
-  };
-};
+console.log('Using safe socket implementation');
 
-// Try to create a real socket connection with fallback to mock
-let socket;
+// Create a safe socket using our helper
+const socket = createSafeSocketConnection(
+  typeof server === 'string' ? server : 'http://localhost:8000'
+);
 
-try {
-  // Attempt to create a real socket connection
-  socket = io(server, {
-    transports: ['websocket'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 5,
-    timeout: 5000,
-    autoConnect: false // Don't connect automatically
-  });
-  
-  // Set up event handlers
-  socket.on('connect', () => {
-    console.log('Socket connected:', socket.id);
-  });
-  
-  socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
-  });
-  
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('Socket disconnected');
-  });
-  
-  // Try to connect
-  socket.connect();
-  
-  // If connection fails after timeout, fall back to mock
-  setTimeout(() => {
-    if (!socket.connected) {
-      console.warn('Socket connection timed out, falling back to mock implementation');
-      socket = createMockSocket().connect();
-    }
-  }, 5000);
-} catch (error) {
-  console.error('Error creating socket:', error);
-  socket = createMockSocket().connect();
-}
+// Ensure we have a connected socket
+setTimeout(() => {
+  try {
+    socket.connect();
+    console.log('Socket safely connected');
+  } catch (e) {
+    console.error('Error connecting socket:', e);
+  }
+}, 1000);
 
 export default socket;
 
