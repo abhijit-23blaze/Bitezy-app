@@ -2,7 +2,6 @@
 
 An open-source, privacy-focused food delivery application designed specifically for campus environments. Bitezy connects students with nearby restaurants while maintaining complete transparency about data usage and ensuring user privacy is never compromised.
 
-![Bitezy App Preview](https://via.placeholder.com/800x400/ff6b35/ffffff?text=Bitezy+Food+Delivery)
 
 ## ✨ Features
 
